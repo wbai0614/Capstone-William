@@ -24,11 +24,7 @@
         <div class="field">
           <label for="model">Model</label>
           <select id="model"></select>
-        </div>
-        <div class="field">
-          <label for="baseUrl">API Base</label>
-          <input id="baseUrl" value="/" />
-          <small>Same-origin. Leave as “/”.</small>
+          <small class="muted">Churn models: <code>logreg</code>, <code>dtree</code>, <code>svm</code> • Clusters: <code>kmeans</code> • Sales: <code>linreg</code></small>
         </div>
       </div>
     </section>
@@ -36,12 +32,11 @@
     <section class="card">
       <h2>Features</h2>
 
-      <!-- Preset sampler -->
       <div class="row">
         <div class="field">
           <label>Pick a sample</label>
           <select id="presetSelect"></select>
-          <small>Loads example feature values for quick testing.</small>
+          <small class="muted">One click to load sensible example values.</small>
         </div>
         <div class="field">
           <label>&nbsp;</label>
@@ -52,7 +47,7 @@
       <div id="formArea" class="mt"></div>
 
       <details class="mt">
-        <summary>Or paste JSON</summary>
+        <summary>Or paste JSON (unknown fields are ignored)</summary>
         <textarea id="featuresBox" spellcheck="false"></textarea>
       </details>
 
@@ -60,6 +55,8 @@
         <button id="sendBtn" class="btn primary">Predict</button>
         <button id="resetBtn" class="btn">Reset</button>
       </div>
+
+      <div id="notice" class="notice" hidden></div>
     </section>
 
     <section class="card">
@@ -76,7 +73,7 @@
   </main>
 
   <footer class="container footer">
-    <small>Form & samples auto-build from <code>/schema</code>. Update models → UI updates itself.</small>
+    <small>Form auto-builds from <code>/schema</code>. We only send allowed fields (no <code>churn</code>).</small>
   </footer>
 
   <script src="/static/app.js"></script>
