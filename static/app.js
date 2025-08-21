@@ -1,3 +1,5 @@
+// static/app.js
+
 // DOM
 const els = {
   model: document.getElementById("model"),
@@ -179,10 +181,18 @@ function deriveSamples(){
         region:"West",segment:"Corporate",product_name:"Mouse",category:"Electronics",sentiment:"Positive"
       }},
     ],
+    // ── KMEANS SAMPLE LABEL CHANGES HERE ─────────────────────────────────────
     kmeans: [
-      {name:"Mid Spender", data:m.kmeans_clusters.example_payload_dict.features},
-      {name:"High Spender", data:{price:70000,quantity:3,total_value:210000,age:45,tenure_months:80}}
+      { // was "Mid Spender" → now "Low Spender"
+        name:"Low Spender",
+        data:m.kmeans_clusters.example_payload_dict.features
+      },
+      { // was "High Spender" → now "Mid Spender"
+        name:"Mid Spender",
+        data:{price:70000,quantity:3,total_value:210000,age:45,tenure_months:80}
+      }
     ],
+    // ─────────────────────────────────────────────────────────────────────────
     linreg: [
       {name:"Projector Corporate", data:m.linreg_sales.example_payload.features},
       {name:"Desk Small Biz", data:{
