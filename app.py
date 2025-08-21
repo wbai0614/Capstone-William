@@ -1,16 +1,14 @@
 # app.py
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from werkzeug.exceptions import BadRequest
 import os
 import pickle
 import numpy as np
 import pandas as pd
 
-# Serve static frontend from ./frontend at site root
-# → /  -> frontend/index.html
-# → /schema, /predict, /batch_predict remain API routes
-app = Flask(__name__, static_folder="frontend", static_url_path="")
+# Serve the UI from ./templates (index.html) and keep API routes
+app = Flask(__name__, template_folder="templates")
 
 # -----------------------------
 # Model paths
@@ -21,11 +19,11 @@ SVM_PATH    = "models/customer_churn_svm.pkl"
 KMEANS_PATH = "models/customer_kmeans.pkl"
 LINREG_PATH = "models/sales_linear_reg.pkl"   # regression model
 
-def _require(path):
+def _require(path: str):
     if not os.path.exists(path):
         raise FileNotFoundError(f"Missing model file: {path}")
 
-# Fail fast if any required model is missing
+# Fail-fast if any required model is missing
 for p in [LOGREG_PATH, DTREE_PATH, SVM_PATH, KMEANS_PATH, LINREG_PATH]:
     _require(p)
 
@@ -44,7 +42,6 @@ with open(LINREG_PATH, "rb") as f:
 # -----------------------------
 # Feature schemas (match training)
 # -----------------------------
-# Churn/classifiers & KMeans numeric base
 NUM_COLS = ["price", "quantity", "total_value", "age", "tenure_months"]
 CAT_COLS = ["gender", "region", "segment", "product_name", "category", "sentiment"]
 
@@ -53,7 +50,7 @@ KMEANS_ORDER = NUM_COLS[:]  # order matters for list input
 
 # Linear Regression (target = total_value) → exclude total_value from inputs
 REG_NUM_COLS = ["price", "quantity", "age", "tenure_months"]
-REG_CAT_COLS = CAT_COLS[:]  # same categoricals as above
+REG_CAT_COLS = CAT_COLS[:]
 
 # -----------------------------
 # Helpers
@@ -93,7 +90,6 @@ def predict_kmeans_row(features):
     return cluster, vals
 
 def predict_linreg_row(features_dict):
-    # Regression uses a different schema (no total_value in inputs)
     ensure_keys(features_dict, REG_NUM_COLS + REG_CAT_COLS, "linreg")
     X_row = pd.DataFrame([{k: features_dict[k] for k in REG_NUM_COLS + REG_CAT_COLS}])
     y_hat = float(linreg_pipe.predict(X_row)[0])
@@ -103,16 +99,16 @@ def predict_linreg_row(features_dict):
 # Frontend + Health
 # -----------------------------
 @app.route("/", methods=["GET"])
-def serve_frontend():
-    # Serves ./frontend/index.html
-    return app.send_static_file("index.html")
+def serve_ui():
+    """Serve the website UI (templates/index.html)."""
+    return render_template("index.html")
 
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"message": "OK", "service": "Customer Sales ML API"}), 200
 
 # -----------------------------
-# API: schema/predict/batch_predict
+# API: schema / predict / batch_predict
 # -----------------------------
 @app.route("/schema", methods=["GET"])
 def schema():
@@ -215,53 +211,34 @@ def predict():
             if not isinstance(features, dict):
                 return bad_request("For 'logreg', 'features' must be a dict.")
             y_pred, proba = predict_classifier_row(logreg_pipe, features, "logreg")
-            return jsonify({
-                "model_type": "logreg",
-                "input": features,
-                "prediction": y_pred,
-                "probability_of_churn": proba
-            }), 200
+            return jsonify({"model_type": "logreg", "input": features,
+                            "prediction": y_pred, "probability_of_churn": proba}), 200
 
         if model_type == "dtree":
             if not isinstance(features, dict):
                 return bad_request("For 'dtree', 'features' must be a dict.")
             y_pred, proba = predict_classifier_row(dtree_pipe, features, "dtree")
-            return jsonify({
-                "model_type": "dtree",
-                "input": features,
-                "prediction": y_pred,
-                "probability_of_churn": proba
-            }), 200
+            return jsonify({"model_type": "dtree", "input": features,
+                            "prediction": y_pred, "probability_of_churn": proba}), 200
 
         if model_type == "svm":
             if not isinstance(features, dict):
                 return bad_request("For 'svm', 'features' must be a dict.")
             y_pred, proba = predict_classifier_row(svm_pipe, features, "svm")
-            return jsonify({
-                "model_type": "svm",
-                "input": features,
-                "prediction": y_pred,
-                "probability_of_churn": proba
-            }), 200
+            return jsonify({"model_type": "svm", "input": features,
+                            "prediction": y_pred, "probability_of_churn": proba}), 200
 
         if model_type == "kmeans":
             cluster, ordered_vals = predict_kmeans_row(features)
-            return jsonify({
-                "model_type": "kmeans",
-                "order": KMEANS_ORDER,
-                "features": ordered_vals,
-                "prediction_cluster": cluster
-            }), 200
+            return jsonify({"model_type": "kmeans", "order": KMEANS_ORDER,
+                            "features": ordered_vals, "prediction_cluster": cluster}), 200
 
         if model_type == "linreg":
             if not isinstance(features, dict):
                 return bad_request("For 'linreg', 'features' must be a dict.")
             y_hat = predict_linreg_row(features)
-            return jsonify({
-                "model_type": "linreg",
-                "input": features,
-                "predicted_sales_value": y_hat
-            }), 200
+            return jsonify({"model_type": "linreg", "input": features,
+                            "predicted_sales_value": y_hat}), 200
 
         return bad_request("Unhandled model_type.")
 
@@ -306,20 +283,14 @@ def batch_predict():
             except Exception:
                 probas = [None] * len(rows)
             for i in range(len(rows)):
-                outputs.append({
-                    "input": rows[i],
-                    "prediction": preds[i],
-                    "probability_of_churn": probas[i]
-                })
+                outputs.append({"input": rows[i], "prediction": preds[i],
+                                "probability_of_churn": probas[i]})
 
         elif model_type == "kmeans":
             for row in rows:
                 cluster, ordered_vals = predict_kmeans_row(row)
-                outputs.append({
-                    "order": KMEANS_ORDER,
-                    "features": ordered_vals,
-                    "prediction_cluster": cluster
-                })
+                outputs.append({"order": KMEANS_ORDER, "features": ordered_vals,
+                                "prediction_cluster": cluster})
 
         else:  # linreg
             for row in rows:
@@ -329,10 +300,7 @@ def batch_predict():
             X_df = pd.DataFrame([{k: r[k] for k in REG_NUM_COLS + REG_CAT_COLS} for r in rows])
             y_hat = linreg_pipe.predict(X_df).astype(float).tolist()
             for i in range(len(rows)):
-                outputs.append({
-                    "input": rows[i],
-                    "predicted_sales_value": y_hat[i]
-                })
+                outputs.append({"input": rows[i], "predicted_sales_value": y_hat[i]})
 
         return jsonify({"model_type": model_type, "results": outputs}), 200
 
@@ -341,8 +309,7 @@ def batch_predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
-# No dev server here; Cloud Run/Gunicorn will serve the app.
-# If you want local dev, uncomment:
+# No dev server here; Gunicorn/Cloud Run will serve the app.
+# For local dev, you can uncomment:
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=5000, debug=True)
