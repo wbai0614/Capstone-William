@@ -7,11 +7,11 @@ import pickle
 import numpy as np
 import pandas as pd
 
-# Serve the UI from ./templates (index.html) and keep API routes
-app = Flask(__name__, template_folder="templates")
+# Serve website from ./templates and static assets from ./static (Flask default)
+app = Flask(__name__, template_folder="templates", static_folder="static")
 
 # -----------------------------
-# Model paths
+# Model paths (must exist in the image)
 # -----------------------------
 LOGREG_PATH = "models/customer_churn_logreg.pkl"
 DTREE_PATH  = "models/customer_churn_dtree.pkl"
@@ -40,7 +40,7 @@ with open(LINREG_PATH, "rb") as f:
     linreg_pipe = pickle.load(f)
 
 # -----------------------------
-# Feature schemas (match training)
+# Feature schemas (must match training)
 # -----------------------------
 NUM_COLS = ["price", "quantity", "total_value", "age", "tenure_months"]
 CAT_COLS = ["gender", "region", "segment", "product_name", "category", "sentiment"]
@@ -96,7 +96,7 @@ def predict_linreg_row(features_dict):
     return y_hat
 
 # -----------------------------
-# Frontend + Health
+# Website + Health
 # -----------------------------
 @app.route("/", methods=["GET"])
 def serve_ui():
@@ -309,7 +309,7 @@ def batch_predict():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# No dev server here; Gunicorn/Cloud Run will serve the app.
+# Gunicorn/Cloud Run will serve the app.
 # For local dev, you can uncomment:
 # if __name__ == "__main__":
 #     app.run(host="0.0.0.0", port=5000, debug=True)

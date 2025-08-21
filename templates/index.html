@@ -12,15 +12,14 @@
     <div class="controls">
       <button id="healthBtn" class="btn secondary">Health</button>
       <label class="toggle">
-        <input id="themeToggle" type="checkbox">
-        <span>🌙 Dark</span>
+        <input id="themeToggle" type="checkbox"><span>🌙 Dark</span>
       </label>
     </div>
   </header>
 
   <main class="container grid">
     <section class="card">
-      <h2>Model & Endpoint</h2>
+      <h2>Choose Model</h2>
       <div class="row">
         <div class="field">
           <label for="model">Model</label>
@@ -29,27 +28,46 @@
         <div class="field">
           <label for="baseUrl">API Base</label>
           <input id="baseUrl" value="/" />
-          <small>Same-origin. If testing remotely, paste your full Cloud Run URL.</small>
+          <small>Same-origin. Leave as “/”.</small>
         </div>
       </div>
     </section>
 
     <section class="card">
       <h2>Features</h2>
-      <div id="formArea"></div>
+
+      <!-- Preset sampler -->
+      <div class="row">
+        <div class="field">
+          <label>Pick a sample</label>
+          <select id="presetSelect"></select>
+          <small>Loads example feature values for quick testing.</small>
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button id="loadPresetBtn" class="btn">Load Sample</button>
+        </div>
+      </div>
+
+      <div id="formArea" class="mt"></div>
+
       <details class="mt">
         <summary>Or paste JSON</summary>
         <textarea id="featuresBox" spellcheck="false"></textarea>
       </details>
+
       <div class="row mt">
-        <button id="sendBtn" class="btn primary">Send Prediction</button>
+        <button id="sendBtn" class="btn primary">Predict</button>
         <button id="resetBtn" class="btn">Reset</button>
       </div>
     </section>
 
     <section class="card">
-      <h2>Response</h2>
+      <h2>Prediction</h2>
+      <div id="prettyOutput" class="pretty"></div>
+      <h3 class="mt-sm muted">Raw Response</h3>
       <pre id="output">—</pre>
+
       <div class="mt row">
         <button id="copyCurlBtn" class="btn">Copy as cURL</button>
         <span id="copyToast" class="toast" hidden>Copied!</span>
@@ -58,7 +76,7 @@
   </main>
 
   <footer class="container footer">
-    <small>Tip: the form auto-builds from <code>/schema</code>. Add fields to your model → they appear here.</small>
+    <small>Form & samples auto-build from <code>/schema</code>. Update models → UI updates itself.</small>
   </footer>
 
   <script src="/static/app.js"></script>
