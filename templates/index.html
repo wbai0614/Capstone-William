@@ -1,107 +1,66 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="utf-8"/>
-  <title>Customer Sales ML API</title>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;margin:24px;max-width:900px}
-    h1{margin-bottom:8px} .card{border:1px solid #ddd;border-radius:10px;padding:16px;margin:12px 0}
-    label{display:block;margin:8px 0 4px;font-weight:600}
-    select,input,textarea,button{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px}
-    textarea{height:200px} button{cursor:pointer}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-    pre{background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;overflow:auto}
-  </style>
+  <title>Customer Sales ML API</title>
+  <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
-  <h1>Customer Sales ML API</h1>
-  <p>Test the API served by this Cloud Run service.</p>
-
-  <div class="card">
-    <div class="row">
-      <div>
-        <label for="model">Model</label>
-        <select id="model">
-          <option value="logreg">Churn — Logistic Regression</option>
-          <option value="dtree">Churn — Decision Tree</option>
-          <option value="svm">Churn — SVM</option>
-          <option value="kmeans">Clustering — KMeans</option>
-          <option value="linreg">Sales — Linear Regression</option>
-        </select>
-      </div>
-      <div>
-        <label>API Base</label>
-        <input id="baseUrl" value="/" />
-      </div>
+  <header class="container header">
+    <h1>Customer Sales ML API</h1>
+    <div class="controls">
+      <button id="healthBtn" class="btn secondary">Health</button>
+      <label class="toggle">
+        <input id="themeToggle" type="checkbox">
+        <span>🌙 Dark</span>
+      </label>
     </div>
-  </div>
+  </header>
 
-  <div class="card">
-    <label for="features">Features (JSON)</label>
-    <textarea id="features">{
-  "price": 12000,
-  "quantity": 2,
-  "total_value": 24000,
-  "age": 40,
-  "tenure_months": 37,
-  "gender": "Female",
-  "region": "West",
-  "segment": "Small Business",
-  "product_name": "Desk",
-  "category": "Furniture",
-  "sentiment": "Negative"
-}</textarea>
-    <div class="row" style="margin-top:12px">
-      <button id="sendBtn">Send Prediction</button>
-      <button id="healthBtn">Check Health</button>
-    </div>
-  </div>
+  <main class="container grid">
+    <section class="card">
+      <h2>Model & Endpoint</h2>
+      <div class="row">
+        <div class="field">
+          <label for="model">Model</label>
+          <select id="model"></select>
+        </div>
+        <div class="field">
+          <label for="baseUrl">API Base</label>
+          <input id="baseUrl" value="/" />
+          <small>Same-origin. If testing remotely, paste your full Cloud Run URL.</small>
+        </div>
+      </div>
+    </section>
 
-  <div class="card">
-    <h3>Response</h3>
-    <pre id="output">—</pre>
-  </div>
+    <section class="card">
+      <h2>Features</h2>
+      <div id="formArea"></div>
+      <details class="mt">
+        <summary>Or paste JSON</summary>
+        <textarea id="featuresBox" spellcheck="false"></textarea>
+      </details>
+      <div class="row mt">
+        <button id="sendBtn" class="btn primary">Send Prediction</button>
+        <button id="resetBtn" class="btn">Reset</button>
+      </div>
+    </section>
 
-<script>
-const output = document.getElementById("output");
-const modelSel = document.getElementById("model");
-const baseUrlInput = document.getElementById("baseUrl");
-const featuresBox = document.getElementById("features");
+    <section class="card">
+      <h2>Response</h2>
+      <pre id="output">—</pre>
+      <div class="mt row">
+        <button id="copyCurlBtn" class="btn">Copy as cURL</button>
+        <span id="copyToast" class="toast" hidden>Copied!</span>
+      </div>
+    </section>
+  </main>
 
-document.getElementById("sendBtn").addEventListener("click", async () => {
-  const base = baseUrlInput.value.replace(/\/$/, "");
-  let features;
-  try {
-    features = JSON.parse(featuresBox.value);
-  } catch {
-    output.textContent = "Invalid JSON in Features box.";
-    return;
-  }
-  const payload = { model_type: modelSel.value, features };
-  try {
-    const res = await fetch(`${base}/predict`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    output.textContent = JSON.stringify(data, null, 2);
-  } catch (err) {
-    output.textContent = "Request failed: " + err.message;
-  }
-});
+  <footer class="container footer">
+    <small>Tip: the form auto-builds from <code>/schema</code>. Add fields to your model → they appear here.</small>
+  </footer>
 
-document.getElementById("healthBtn").addEventListener("click", async () => {
-  const base = baseUrlInput.value.replace(/\/$/, "");
-  try {
-    const res = await fetch(`${base}/health`);
-    const data = await res.json();
-    output.textContent = JSON.stringify(data, null, 2);
-  } catch (err) {
-    output.textContent = "Health check failed: " + err.message;
-  }
-});
-</script>
+  <script src="/static/app.js"></script>
 </body>
 </html>
